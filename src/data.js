@@ -15,22 +15,26 @@ export const PACKAGES = [
   {
     id: 'spotlight', name: 'Spotlight', price: 25, pax: 1, maxExtra: 1, minutes: 10, prints: 0,
     blurb: 'Untuk sorang. Masa untuk diri sendiri.',
-    extras: [],
+    blurbEn: 'Just you. Some time for yourself.',
+    extras: [], extrasEn: [],
   },
   {
     id: 'twogether', name: 'Twogether', price: 42, pax: 2, maxExtra: 2, minutes: 25, prints: 1,
     blurb: 'Berdua, dengan pasangan, kawan baik atau si kecil.',
-    extras: ['Baby & toddler boleh masuk sekali'],
+    blurbEn: 'For two: your partner, best friend or little one.',
+    extras: ['Baby & toddler boleh masuk sekali'], extrasEn: ['Babies & toddlers welcome'],
   },
   {
     id: 'vibetribe', name: 'Vibe Tribe', price: 75, pax: 5, maxExtra: 2, minutes: 30, prints: 2,
     blurb: 'Satu geng, satu keluarga kecil.',
-    extras: [],
+    blurbEn: 'A small family or your travel crew.',
+    extras: [], extrasEn: [],
   },
   {
     id: 'chaoscrew', name: 'Chaos Crew', price: 100, pax: 8, maxExtra: 2, minutes: 40, prints: 2,
     blurb: 'Ramai-ramai. Makin ramai, makin huru-hara.',
-    extras: [],
+    blurbEn: 'The whole group. The more, the merrier (and messier).',
+    extras: [], extrasEn: [],
   },
 ];
 
@@ -38,10 +42,10 @@ export const EXTRA_PAX_PRICE = 10;
 export const EXTRA_PRINT_PRICE = 4;
 
 export const BACKDROPS = [
-  { id: 'pongee', name: 'Pongee', hex: '#D8CFAE', ink: '#1b1712', mood: 'Lembut dan hangat. Sesuai untuk gambar keluarga.' },
-  { id: 'lightgrey', name: 'Light Grey', hex: '#C4D3CE', ink: '#1b1712', mood: 'Bersih dan moden. Baju warna apa pun naik.' },
-  { id: 'deepblue', name: 'Deep Blue', hex: '#34495F', ink: '#EFE8DE', mood: 'Gelap dan dramatik. Muka lebih menyerlah.' },
-  { id: 'flame', name: 'Flame', hex: '#8E2F37', ink: '#EFE8DE', mood: 'Berani dan meriah. Untuk yang nak lain dari lain.' },
+  { id: 'pongee', name: 'Pongee', hex: '#D8CFAE', ink: '#1b1712', mood: 'Lembut dan hangat. Sesuai untuk gambar keluarga.', moodEn: 'Soft and warm. Lovely for family photos.' },
+  { id: 'lightgrey', name: 'Light Grey', hex: '#C4D3CE', ink: '#1b1712', mood: 'Bersih dan moden. Baju warna apa pun naik.', moodEn: 'Clean and modern. Works with any outfit.' },
+  { id: 'deepblue', name: 'Deep Blue', hex: '#34495F', ink: '#EFE8DE', mood: 'Gelap dan dramatik. Muka lebih menyerlah.', moodEn: 'Dark and dramatic. Faces really pop.' },
+  { id: 'flame', name: 'Flame', hex: '#8E2F37', ink: '#EFE8DE', mood: 'Berani dan meriah. Untuk yang nak lain dari lain.', moodEn: 'Bold and lively. For something different.' },
 ];
 
 // Waktu operasi (waktu Malaysia). 0 = Ahad ... 6 = Sabtu
@@ -56,7 +60,12 @@ export const HOURS = {
 };
 
 export const DAY_NAMES = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+export const DAY_NAMES_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 export const MONTH_NAMES = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
+export const MONTH_NAMES_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export const dayNames = (lang) => (lang === 'en' ? DAY_NAMES_EN : DAY_NAMES);
+export const monthNames = (lang) => (lang === 'en' ? MONTH_NAMES_EN : MONTH_NAMES);
 
 export const SLOT_STEP = 15;     // minit antara slot
 export const BUFFER_MIN = 5;     // masa tukar giliran

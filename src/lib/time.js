@@ -1,4 +1,4 @@
-import { HOURS, DAY_NAMES, MONTH_NAMES, SLOT_STEP, BUFFER_MIN, LEAD_MIN } from '../data';
+import { HOURS, SLOT_STEP, BUFFER_MIN, LEAD_MIN, dayNames, monthNames } from '../data';
 
 const MYT = 8 * 60 * 60 * 1000; // Malaysia tiada DST
 
@@ -21,12 +21,14 @@ export function addDays(date, n) {
   return d.toISOString().slice(0, 10);
 }
 
-// "6:00 ptg", "8:30 pagi", "12:15 tgh", "9:00 mlm"
-export function clock(min) {
+// BM: "6:00 ptg", "8:30 pagi"   EN: "6 pm", "8:30 am"
+export function clock(min, lang = 'ms') {
   const h = Math.floor(min / 60), m = min % 60;
-  const part = h < 12 ? 'pagi' : h < 14 ? 'tgh' : h < 19 ? 'ptg' : 'mlm';
   const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${h12}${m ? ':' + String(m).padStart(2, '0') : ''} ${part}`;
+  const mm = m ? ':' + String(m).padStart(2, '0') : '';
+  if (lang === 'en') return `${h12}${mm} ${h < 12 ? 'am' : 'pm'}`;
+  const part = h < 12 ? 'pagi' : h < 14 ? 'tgh' : h < 19 ? 'ptg' : 'mlm';
+  return `${h12}${mm} ${part}`;
 }
 
 export function hoursOf(date) {
@@ -34,22 +36,26 @@ export function hoursOf(date) {
   return { open: toMin(o), close: toMin(c) };
 }
 
-export function longDate(date) {
+export function longDate(date, lang = 'ms') {
   const d = new Date(`${date}T00:00:00Z`);
-  return `${DAY_NAMES[d.getUTCDay()]}, ${d.getUTCDate()} ${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  const day = dayNames(lang)[d.getUTCDay()];
+  const mon = monthNames(lang)[d.getUTCMonth()];
+  return lang === 'en'
+    ? `${day}, ${d.getUTCDate()} ${mon} ${d.getUTCFullYear()}`
+    : `${day}, ${d.getUTCDate()} ${mon} ${d.getUTCFullYear()}`;
 }
 
-// Status langsung untuk header / hero
-export function liveStatus() {
+// Status langsung untuk hero / lokasi
+export function liveStatus(lang = 'ms') {
+  const en = lang === 'en';
   const n = nowMYT();
   const { open, close } = hoursOf(n.date);
   if (n.minutes >= open && n.minutes < close) {
-    return { open: true, text: `Buka sekarang, sampai ${clock(close)}` };
+    return { open: true, text: en ? `Open now, until ${clock(close, lang)}` : `Buka sekarang, sampai ${clock(close, lang)}` };
   }
-  if (n.minutes < open) return { open: false, text: `Tutup. Buka hari ini ${clock(open)}` };
-  const t = addDays(n.date, 1);
-  const tmr = hoursOf(t);
-  return { open: false, text: `Tutup. Buka esok ${clock(tmr.open)}` };
+  if (n.minutes < open) return { open: false, text: en ? `Closed. Opens today at ${clock(open, lang)}` : `Tutup. Buka hari ini ${clock(open, lang)}` };
+  const tmr = hoursOf(addDays(n.date, 1));
+  return { open: false, text: en ? `Closed. Opens tomorrow at ${clock(tmr.open, lang)}` : `Tutup. Buka esok ${clock(tmr.open, lang)}` };
 }
 
 // Tukar masa dari database (ISO) kepada minit dalam hari (waktu Malaysia) untuk tarikh tertentu

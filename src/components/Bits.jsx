@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { CONTACT } from '../data';
 import mark from '../assets/brand/mark.png';
+import { useLang, LangSwitch } from '../i18n';
 
 export const waLink = (text) => `https://wa.me/${CONTACT.whatsapp}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
 
@@ -13,13 +14,16 @@ export function WaIcon() {
   );
 }
 
-const LINKS = [['#pakej', 'Pakej'], ['#cara', 'Cara guna'], ['#backdrop', 'Backdrop'], ['#galeri', 'Galeri'], ['#lokasi', 'Lokasi']];
+const LINKS = [['#pakej', 'Pakej', 'Packages'], ['#cara', 'Cara guna', 'How it works'], ['#backdrop', 'Backdrop', 'Backdrops'], ['#galeri', 'Galeri', 'Gallery'], ['#lokasi', 'Lokasi', 'Location']];
+const hello = (tr) => tr('Salam RK Studio, saya nak tanya.', 'Hi RK Studio, I have a question.');
 
 export function Nav() {
   const [solid, setSolid] = useState(false);
   const [menu, setMenu] = useState(false);
   const { pathname } = useLocation();
+  const { lang, tr } = useLang();
   const home = pathname === '/';
+  const admin = pathname.startsWith('/admin');
 
   useEffect(() => {
     const on = () => {
@@ -34,19 +38,20 @@ export function Nav() {
 
   return (
     <>
-      <nav className={`nav ${solid || !home ? 'nav--solid' : ''}`} aria-label="Menu utama">
-        <Link to="/" className="nav__logo" aria-label="RK Studio, laman utama" onClick={() => window.scrollTo(0, 0)}>
+      <nav className={`nav ${solid || !home ? 'nav--solid' : ''}`} aria-label={tr('Menu utama', 'Main menu')}>
+        <Link to="/" className="nav__logo" aria-label={tr('RK Studio, laman utama', 'RK Studio, home')} onClick={() => window.scrollTo(0, 0)}>
           <img src={mark} alt="" /><span>RK Studio</span>
         </Link>
         {home && (
           <ul className="nav__links">
-            {LINKS.map(([h, l]) => <li key={h}><a href={h}>{l}</a></li>)}
+            {LINKS.map(([h, ms, en]) => <li key={h}><a href={h}>{lang === 'en' ? en : ms}</a></li>)}
           </ul>
         )}
         <div className="nav__right">
-          {pathname !== '/tempah' && !pathname.startsWith('/admin') && <Link to="/tempah" className="btn btn--small nav__book">Tempah slot</Link>}
+          {!admin && <LangSwitch />}
+          {pathname !== '/tempah' && !admin && <Link to="/tempah" className="btn btn--small nav__book">{tr('Tempah slot', 'Book a slot')}</Link>}
           {home && (
-            <button className="nav__burger" type="button" aria-expanded={menu} aria-label="Buka menu" onClick={() => setMenu(true)}>
+            <button className="nav__burger" type="button" aria-expanded={menu} aria-label={tr('Buka menu', 'Open menu')} onClick={() => setMenu(true)}>
               <i /><i />
             </button>
           )}
@@ -54,13 +59,14 @@ export function Nav() {
       </nav>
       {menu && (
         <div className="sheet" role="dialog" aria-modal="true" aria-label="Menu">
-          <button className="sheet__close" type="button" onClick={() => setMenu(false)} aria-label="Tutup menu">×</button>
+          <button className="sheet__close" type="button" onClick={() => setMenu(false)} aria-label={tr('Tutup menu', 'Close menu')}>×</button>
           <ul>
-            {LINKS.map(([h, l]) => <li key={h}><a href={h} onClick={() => setMenu(false)}>{l}</a></li>)}
+            {LINKS.map(([h, ms, en]) => <li key={h}><a href={h} onClick={() => setMenu(false)}>{lang === 'en' ? en : ms}</a></li>)}
           </ul>
           <div className="sheet__cta">
-            <Link to="/tempah" className="btn btn--ivory" onClick={() => setMenu(false)}>Tempah slot</Link>
-            <a className="btn btn--ghost" href={waLink('Salam RK Studio, saya nak tanya.')} target="_blank" rel="noreferrer"><WaIcon />WhatsApp</a>
+            <div className="sheet__lang"><span>{tr('Bahasa', 'Language')}</span><LangSwitch className="lang--big" /></div>
+            <Link to="/tempah" className="btn btn--ivory" onClick={() => setMenu(false)}>{tr('Tempah slot', 'Book a slot')}</Link>
+            <a className="btn btn--ghost" href={waLink(hello(tr))} target="_blank" rel="noreferrer"><WaIcon />WhatsApp</a>
           </div>
         </div>
       )}
@@ -69,6 +75,7 @@ export function Nav() {
 }
 
 export function MobileBar() {
+  const { tr } = useLang();
   const [show, setShow] = useState(false);
   useEffect(() => {
     const on = () => setShow(window.scrollY > window.innerHeight * 0.6);
@@ -78,23 +85,24 @@ export function MobileBar() {
   }, []);
   return (
     <div className={`mbar ${show ? 'is-on' : ''}`}>
-      <Link to="/tempah" className="btn btn--dark">Tempah slot</Link>
-      <a className="mbar__wa" href={waLink('Salam RK Studio, saya nak tanya.')} target="_blank" rel="noreferrer" aria-label="WhatsApp RK Studio"><WaIcon /></a>
+      <Link to="/tempah" className="btn btn--dark">{tr('Tempah slot', 'Book a slot')}</Link>
+      <a className="mbar__wa" href={waLink(hello(tr))} target="_blank" rel="noreferrer" aria-label="WhatsApp RK Studio"><WaIcon /></a>
     </div>
   );
 }
 
 export function Notes() {
+  const { tr } = useLang();
   const items = [
-    ['Medium shot je', 'Kamera dah disetkan untuk gambar separuh badan. Gambar seluruh badan tak dapat.'],
-    ['Kamu ambil sendiri', 'Ni studio layan diri. Tiada jurugambar dalam bilik, jadi bebas nak buat gaya apa pun.'],
-    ['Ikut masa', 'Sesi bermula dan tamat ikut slot. Datang awal sikit supaya masa sesi tak terbuang.'],
-    ['Pandang kamera', 'TV tu untuk preview. Masa snap, mata ke kamera supaya gambar nampak terus ke depan.'],
+    [tr('Medium shot je', 'Medium shots only'), tr('Kamera dah disetkan untuk gambar separuh badan. Gambar seluruh badan tak dapat.', 'The camera is set for waist-up framing. Full-body shots are not possible.')],
+    [tr('Kamu ambil sendiri', 'No photographer, just you'), tr('Ni studio layan diri. Tiada jurugambar dalam bilik, jadi bebas nak buat gaya apa pun.', "It's self-service. No photographer in the room, so pose however you like.")],
+    [tr('Ikut masa', 'Sessions are timed'), tr('Sesi bermula dan tamat ikut slot. Datang awal sikit supaya masa sesi tak terbuang.', 'Your session starts and ends with your slot. Arrive a little early so you get the full time.')],
+    [tr('Pandang kamera', 'Look at the camera'), tr('TV tu untuk preview. Masa snap, mata ke kamera supaya gambar nampak terus ke depan.', 'The TV is just for previews. Look into the camera when you shoot.')],
   ];
   return (
     <section className="notes paper paper--pongee">
       <div className="wrap">
-        <h2 className="display">Sebelum datang</h2>
+        <h2 className="display">{tr('Sebelum datang', 'Before you come')}</h2>
         <dl className="notes__list">
           {items.map(([t, d]) => <div key={t}><dt>{t}</dt><dd>{d}</dd></div>)}
         </dl>
@@ -104,14 +112,15 @@ export function Notes() {
 }
 
 export function FinalCta() {
+  const { tr } = useLang();
   return (
     <section className="final">
       <div className="wrap final__in">
-        <p className="final__big">Slot petang ni<br />masih ada?</p>
-        <p className="lede">Tengok slot kosong dan tempah dalam satu minit. Bayar guna QR atau tunai di studio.</p>
+        <p className="final__big">{tr('Slot petang ni', 'Ready for')}<br />{tr('masih ada?', 'your close-up?')}</p>
+        <p className="lede">{tr('Tengok slot kosong dan tempah dalam satu minit. Bayar guna QR atau tunai di studio.', 'See open slots and book in a minute. Pay by QR or cash at the studio.')}</p>
         <div className="final__cta">
-          <Link to="/tempah" className="btn btn--ivory">Tengok slot kosong</Link>
-          <a className="btn btn--ghost" href={waLink('Salam RK Studio, saya nak tanya.')} target="_blank" rel="noreferrer"><WaIcon />Tanya dulu</a>
+          <Link to="/tempah" className="btn btn--ivory">{tr('Tengok slot kosong', 'See open slots')}</Link>
+          <a className="btn btn--ghost" href={waLink(hello(tr))} target="_blank" rel="noreferrer"><WaIcon />{tr('Tanya dulu', 'Ask us first')}</a>
         </div>
       </div>
     </section>
@@ -119,6 +128,7 @@ export function FinalCta() {
 }
 
 export function Footer() {
+  const { lang, tr } = useLang();
   return (
     <footer className="foot">
       <div className="wrap foot__in">
@@ -128,9 +138,9 @@ export function Footer() {
           <p>Self photo studio, {CONTACT.area}</p>
         </div>
         <ul className="foot__links">
-          <li><a href={waLink()} target="_blank" rel="noreferrer">WhatsApp {CONTACT.whatsappDisplay}</a></li>
+          <li><a href={waLink()} target="_blank" rel="noreferrer">WhatsApp {lang === 'en' ? '+60 11-7117 1509' : CONTACT.whatsappDisplay}</a></li>
           <li><a href={CONTACT.tiktok} target="_blank" rel="noreferrer">TikTok {CONTACT.tiktokHandle}</a></li>
-          <li><a href={CONTACT.beacons} target="_blank" rel="noreferrer">Semua link</a></li>
+          <li><a href={CONTACT.beacons} target="_blank" rel="noreferrer">{tr('Semua link', 'All links')}</a></li>
         </ul>
         <p className="foot__copy">© {new Date().getFullYear()} RK Studio</p>
       </div>

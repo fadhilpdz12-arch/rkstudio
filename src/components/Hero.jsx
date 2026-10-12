@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Camera3D from './Camera3D';
 import { liveStatus } from '../lib/time';
 import posterUrl from '../assets/brand/camera-poster.webp';
+import { useLang } from '../i18n';
 
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 
@@ -10,11 +11,13 @@ export default function Hero({ onModelReady }) {
   const section = useRef(null);
   const stage = useRef(null);
   const progress = useRef(0);
-  const [status, setStatus] = useState(liveStatus());
+  const { lang, tr } = useLang();
+  const [, setTick] = useState(0);
+  const status = liveStatus(lang);
   const [fallback, setFallback] = useState(false);
 
   useEffect(() => {
-    const id = setInterval(() => setStatus(liveStatus()), 60000);
+    const id = setInterval(() => setTick((x) => x + 1), 60000);
     return () => clearInterval(id);
   }, []);
 
@@ -62,15 +65,15 @@ export default function Hero({ onModelReady }) {
         </div>
 
         <div className="hero__copy">
-          <p className="hero__lead">Studio gambar layan diri di Limbongan, Besut. Kamu pegang remote, kamu yang tentukan gaya.</p>
+          <p className="hero__lead">{tr('Studio gambar layan diri di Limbongan, Besut. Kamu pegang remote, kamu yang tentukan gaya.', 'A self photo studio in Besut, Terengganu. You hold the remote, you call the shots.')}</p>
           <p className={`status ${status.open ? 'is-open' : ''}`}><b />{status.text}</p>
           <div className="hero__cta">
-            <Link to="/tempah" className="btn btn--ivory">Tempah slot</Link>
-            <a href="#pakej" className="btn btn--ghost">Tengok pakej</a>
+            <Link to="/tempah" className="btn btn--ivory">{tr('Tempah slot', 'Book a slot')}</Link>
+            <a href="#pakej" className="btn btn--ghost">{tr('Tengok pakej', 'See packages')}</a>
           </div>
         </div>
 
-        <div className="hero__cue" aria-hidden="true"><span>Scroll untuk snap</span><i /></div>
+        <div className="hero__cue" aria-hidden="true"><span>{tr('Scroll untuk snap', 'Scroll to snap')}</span><i /></div>
         <div className="hero__flash" aria-hidden="true" />
       </div>
     </section>

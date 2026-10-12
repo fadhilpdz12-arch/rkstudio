@@ -1,27 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { PACKAGES, BACKDROPS, EXTRA_PAX_PRICE, EXTRA_PRINT_PRICE, MAX_DAYS, DAY_NAMES, MONTH_NAMES } from '../data';
-import { nowMYT, addDays, dowOf, slotsFor, busyToMinutes, clock, longDate, hoursOf } from '../lib/time';
+import { PACKAGES, BACKDROPS, EXTRA_PAX_PRICE, EXTRA_PRINT_PRICE, MAX_DAYS, dayNames, monthNames } from '../data';
+import { nowMYT, addDays, dowOf, slotsFor, busyToMinutes, clock, longDate, hoursOf, toMin } from '../lib/time';
 import { supabase, friendlyError } from '../lib/supabase';
 import { backdropImg } from '../components/Backdrops';
+import { useLang } from '../i18n';
 
-const STEPS = ['Pakej', 'Backdrop', 'Tarikh & masa', 'Butiran', 'Bayaran'];
-
-function Stepper({ value, min = 0, max, onChange, label }) {
+function Stepper({ value, min = 0, max, onChange, label, lessLabel, moreLabel }) {
   return (
     <div className="stepper">
-      <button type="button" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} aria-label={`Kurang ${label}`}>−</button>
+      <button type="button" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} aria-label={`${lessLabel} ${label}`}>−</button>
       <output aria-live="polite">{value}</output>
-      <button type="button" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max} aria-label={`Tambah ${label}`}>+</button>
+      <button type="button" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max} aria-label={`${moreLabel} ${label}`}>+</button>
     </div>
   );
 }
 
-function partOfDay(min) {
-  if (min < 12 * 60) return 'Pagi';
-  if (min < 14 * 60) return 'Tengah hari';
-  if (min < 19 * 60) return 'Petang';
-  return 'Malam';
+function partOfDay(min, en) {
+  if (min < 12 * 60) return en ? 'Morning' : 'Pagi';
+  if (min < 14 * 60) return en ? 'Midday' : 'Tengah hari';
+  if (min < 19 * 60) return en ? 'Afternoon' : 'Petang';
+  return en ? 'Evening' : 'Malam';
 }
 
 function firstBookableDate() {
@@ -33,7 +32,11 @@ function firstBookableDate() {
 export default function Book() {
   const nav = useNavigate();
   const [params] = useSearchParams();
+  const { lang, tr } = useLang();
+  const en = lang === 'en';
   const initPkg = PACKAGES.find((p) => p.id === params.get('pakej'));
+
+  const STEPS = [tr('Pakej', 'Package'), 'Backdrop', tr('Tarikh & masa', 'Date & time'), tr('Butiran', 'Details'), tr('Bayaran', 'Payment')];
 
   const [step, setStep] = useState(initPkg ? 1 : 0);
   const [pkgId, setPkgId] = useState(initPkg ? initPkg.id : 'twogether');
@@ -44,11 +47,11 @@ export default function Book() {
   const startDate = useMemo(firstBookableDate, []);
   const [date, setDate] = useState(startDate);
   const [time, setTime] = useState('');
-  const [busy, setBusy] = useState({ loading: false, list: [], error: '' });
+  const [busy, setBusy] = useState({ loading: false, list: [], error: null });
   const [form, setForm] = useState({ name: '', phone: '', email: '', note: '' });
   const [pay, setPay] = useState('');
   const [sending, setSending] = useState(false);
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState(null);
   const [touched, setTouched] = useState(false);
   const [sumOpen, setSumOpen] = useState(false);
   const top = useRef(null);
@@ -59,19 +62,19 @@ export default function Book() {
   const days = useMemo(() => Array.from({ length: 30 }, (_, i) => addDays(startDate, i)).filter((d, i) => i < MAX_DAYS), [startDate]);
 
   const loadBusy = async (d) => {
-    setBusy({ loading: true, list: [], error: '' });
+    setBusy({ loading: true, list: [], error: null });
     const { data, error } = await supabase.rpc('get_busy', { p_date: d });
-    if (error) setBusy({ loading: false, list: [], error: friendlyError(error) });
-    else setBusy({ loading: false, list: busyToMinutes(data || [], d), error: '' });
+    if (error) setBusy({ loading: false, list: [], error });
+    else setBusy({ loading: false, list: busyToMinutes(data || [], d), error: null });
   };
   useEffect(() => { if (step === 2) loadBusy(date); }, [date, step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const slots = useMemo(() => slotsFor(date, pkg.minutes, busy.list), [date, pkg.minutes, busy.list]);
   const groups = useMemo(() => {
     const g = {};
-    slots.forEach((s) => { (g[partOfDay(s.min)] ||= []).push(s); });
+    slots.forEach((s) => { (g[partOfDay(s.min, en)] ||= []).push(s); });
     return Object.entries(g);
-  }, [slots]);
+  }, [slots, en]);
   const anyFree = slots.some((s) => s.available);
 
   const phoneOk = form.phone.replace(/\D/g, '').length >= 9;
@@ -79,7 +82,7 @@ export default function Book() {
   const canNext = [true, !!bd, !!time, nameOk && phoneOk, !!pay][step];
 
   const go = (n) => {
-    setErr(''); setTouched(false);
+    setErr(null); setTouched(false);
     setStep(n);
     requestAnimationFrame(() => top.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   };
@@ -93,7 +96,7 @@ export default function Book() {
   };
 
   async function submit() {
-    setSending(true); setErr('');
+    setSending(true); setErr(null);
     const { data, error } = await supabase.rpc('create_booking', {
       p_package: pkg.id, p_extra_pax: extraPax, p_extra_prints: prints, p_backdrop: bd,
       p_date: date, p_time: time, p_name: form.name, p_phone: form.phone,
@@ -101,9 +104,8 @@ export default function Book() {
     });
     setSending(false);
     if (error) {
-      const msg = friendlyError(error);
-      setErr(msg);
-      if (/SLOT_TAKEN|TOO_SOON/.test(error.message)) { setTime(''); go(2); setErr(msg); }
+      if (/SLOT_TAKEN|TOO_SOON/.test(error.message)) { setTime(''); go(2); }
+      setErr(error);
       return;
     }
     const booking = {
@@ -116,16 +118,18 @@ export default function Book() {
   }
 
   const bdObj = BACKDROPS.find((b) => b.id === bd);
+  const unit = (n) => (en ? (n > 1 ? 'people' : 'person') : 'orang');
+  const today = nowMYT().date;
 
   return (
     <main className="book">
       <div className="book__wrap" ref={top}>
         <header className="book__head">
-          <Link to="/" className="book__back">Kembali</Link>
-          <h1 className="display">Tempah slot</h1>
-          <ol className="book__steps" aria-label="Langkah tempahan">
+          <Link to="/" className="book__back">{tr('Kembali', 'Back')}</Link>
+          <h1 className="display">{tr('Tempah slot', 'Book a slot')}</h1>
+          <ol className="book__steps" aria-label={tr('Langkah tempahan', 'Booking steps')}>
             {STEPS.map((s, i) => (
-              <li key={s} className={i === step ? 'is-now' : i < step ? 'is-done' : ''}>
+              <li key={i} className={i === step ? 'is-now' : i < step ? 'is-done' : ''}>
                 <button type="button" disabled={i > step} onClick={() => go(i)} aria-current={i === step ? 'step' : undefined}>
                   <span>{i + 1}</span>{s}
                 </button>
@@ -138,25 +142,37 @@ export default function Book() {
           <section className="book__panel" key={step} aria-live="polite">
             {step === 0 && (
               <>
-                <h2>Pilih pakej</h2>
+                <h2>{tr('Pilih pakej', 'Choose a package')}</h2>
                 <div className="pick-pkgs">
                   {PACKAGES.map((p) => (
                     <label key={p.id} className={`pick-pkg ${pkgId === p.id ? 'is-on' : ''}`}>
                       <input type="radio" name="pkg" value={p.id} checked={pkgId === p.id} onChange={() => setPkgId(p.id)} />
                       <span className="pick-pkg__name">{p.name}</span>
-                      <span className="pick-pkg__meta">{p.pax} orang, {p.minutes} minit{p.prints ? `, ${p.prints} printed photo${p.prints > 1 ? 's' : ''}` : ''}</span>
+                      <span className="pick-pkg__meta">
+                        {p.pax} {unit(p.pax)}, {p.minutes} {tr('minit', 'min')}{p.prints ? `, ${p.prints} printed photo${p.prints > 1 ? 's' : ''}` : ''}
+                      </span>
                       <span className="pick-pkg__price">RM{p.price}</span>
                     </label>
                   ))}
                 </div>
                 <div className="addons">
                   <div className="addon">
-                    <div><b>Orang tambahan</b><p>RM{EXTRA_PAX_PRICE} seorang, maksimum {pkg.maxExtra}</p></div>
-                    <Stepper value={extraPax} max={pkg.maxExtra} onChange={setExtraPax} label="orang tambahan" />
+                    <div>
+                      <b>{tr('Orang tambahan', 'Extra people')}</b>
+                      <p>{en ? `RM${EXTRA_PAX_PRICE} each, up to ${pkg.maxExtra}` : `RM${EXTRA_PAX_PRICE} seorang, maksimum ${pkg.maxExtra}`}</p>
+                    </div>
+                    <Stepper value={extraPax} max={pkg.maxExtra} onChange={setExtraPax} label={tr('orang tambahan', 'extra people')} lessLabel={tr('Kurang', 'Fewer')} moreLabel={tr('Tambah', 'More')} />
                   </div>
                   <div className="addon">
-                    <div><b>Tambah printed photos (4R)</b><p>RM{EXTRA_PRINT_PRICE} sekeping{pkg.prints ? `, selain ${pkg.prints} yang termasuk` : ''}</p></div>
-                    <Stepper value={prints} max={20} onChange={setPrints} label="printed photo" />
+                    <div>
+                      <b>{tr('Tambah printed photos (4R)', 'Extra printed photos (4R)')}</b>
+                      <p>
+                        {en
+                          ? `RM${EXTRA_PRINT_PRICE} each${pkg.prints ? `, on top of the ${pkg.prints} free with your package` : ''}`
+                          : `RM${EXTRA_PRINT_PRICE} sekeping${pkg.prints ? `, selain ${pkg.prints} percuma dalam pakej` : ''}`}
+                      </p>
+                    </div>
+                    <Stepper value={prints} max={20} onChange={setPrints} label="printed photo" lessLabel={tr('Kurang', 'Fewer')} moreLabel={tr('Tambah', 'More')} />
                   </div>
                 </div>
               </>
@@ -164,24 +180,24 @@ export default function Book() {
 
             {step === 1 && (
               <>
-                <h2>Pilih backdrop</h2>
+                <h2>{tr('Pilih backdrop', 'Choose a backdrop')}</h2>
                 <div className="pick-bds" role="radiogroup" aria-label="Backdrop">
                   {BACKDROPS.map((b) => (
                     <button key={b.id} type="button" role="radio" aria-checked={bd === b.id}
                       className={`pick-bd ${bd === b.id ? 'is-on' : ''}`} style={{ '--c': b.hex }} onClick={() => setBd(b.id)}>
                       <img src={backdropImg(b.id)} alt="" />
-                      <span><b>{b.name}</b>{b.mood}</span>
+                      <span><b>{b.name}</b>{en ? b.moodEn : b.mood}</span>
                     </button>
                   ))}
                 </div>
-                {touched && !bd && <p className="field-err">Pilih satu backdrop dulu.</p>}
+                {touched && !bd && <p className="field-err">{tr('Pilih satu backdrop dulu.', 'Pick a backdrop first.')}</p>}
               </>
             )}
 
             {step === 2 && (
               <>
-                <h2>Pilih tarikh & masa</h2>
-                <div className="days" role="listbox" aria-label="Tarikh">
+                <h2>{tr('Pilih tarikh & masa', 'Choose a date & time')}</h2>
+                <div className="days" role="listbox" aria-label={tr('Tarikh', 'Date')}>
                   {days.map((d) => {
                     const dt = new Date(`${d}T00:00:00Z`);
                     const wk = dowOf(d) === 5 || dowOf(d) === 6;
@@ -189,17 +205,21 @@ export default function Book() {
                       <button key={d} type="button" role="option" aria-selected={d === date}
                         className={`day ${d === date ? 'is-on' : ''} ${wk ? 'is-wk' : ''}`}
                         onClick={() => { setDate(d); setTime(''); }}>
-                        <small>{d === startDate && d === nowMYT().date ? 'Hari ini' : DAY_NAMES[dt.getUTCDay()].slice(0, 3)}</small>
+                        <small>{d === today ? tr('Hari ini', 'Today') : dayNames(lang)[dt.getUTCDay()].slice(0, 3)}</small>
                         <b>{dt.getUTCDate()}</b>
-                        <small>{MONTH_NAMES[dt.getUTCMonth()]}</small>
+                        <small>{monthNames(lang)[dt.getUTCMonth()]}</small>
                       </button>
                     );
                   })}
                 </div>
-                <p className="days__hint">{longDate(date)}. Buka {clock(hoursOf(date).open)} hingga {clock(hoursOf(date).close)}. Sesi {pkg.name} {pkg.minutes} minit.</p>
+                <p className="days__hint">
+                  {en
+                    ? `${longDate(date, lang)}. Open ${clock(hoursOf(date).open, lang)} to ${clock(hoursOf(date).close, lang)}. ${pkg.name} session: ${pkg.minutes} min. Times are Malaysia time.`
+                    : `${longDate(date, lang)}. Buka ${clock(hoursOf(date).open, lang)} hingga ${clock(hoursOf(date).close, lang)}. Sesi ${pkg.name} ${pkg.minutes} minit.`}
+                </p>
 
-                {busy.loading && <div className="slots slots--loading" aria-label="Memuatkan slot">{Array.from({ length: 8 }).map((_, i) => <i key={i} />)}</div>}
-                {busy.error && <p className="field-err">{busy.error} <button type="button" className="linkish" onClick={() => loadBusy(date)}>Cuba lagi</button></p>}
+                {busy.loading && <div className="slots slots--loading" aria-label={tr('Memuatkan slot', 'Loading slots')}>{Array.from({ length: 8 }).map((_, i) => <i key={i} />)}</div>}
+                {busy.error && <p className="field-err">{friendlyError(busy.error, lang)} <button type="button" className="linkish" onClick={() => loadBusy(date)}>{tr('Cuba lagi', 'Try again')}</button></p>}
                 {!busy.loading && !busy.error && (
                   anyFree ? groups.map(([g, list]) => (
                     <div key={g} className="slotgroup">
@@ -209,38 +229,38 @@ export default function Book() {
                           <button key={s.time} type="button" disabled={!s.available}
                             className={`slot ${time === s.time ? 'is-on' : ''}`} onClick={() => setTime(s.time)}
                             aria-pressed={time === s.time}>
-                            {clock(s.min)}
+                            {clock(s.min, lang)}
                           </button>
                         ))}
                       </div>
                     </div>
-                  )) : <p className="empty">Slot hari ni dah penuh. Cuba pilih tarikh lain di atas.</p>
+                  )) : <p className="empty">{tr('Slot hari ni dah penuh. Cuba pilih tarikh lain di atas.', 'This day is fully booked. Try another date above.')}</p>
                 )}
-                {touched && !time && <p className="field-err">Pilih satu masa yang masih kosong.</p>}
+                {touched && !time && <p className="field-err">{tr('Pilih satu masa yang masih kosong.', 'Pick an open time.')}</p>}
               </>
             )}
 
             {step === 3 && (
               <>
-                <h2>Butiran kamu</h2>
+                <h2>{tr('Butiran kamu', 'Your details')}</h2>
                 <div className="fields">
                   <label className="field">
-                    <span>Nama</span>
-                    <input autoComplete="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama penuh" maxLength={80} />
-                    {touched && !nameOk && <em className="field-err">Isi nama dulu.</em>}
+                    <span>{tr('Nama', 'Name')}</span>
+                    <input autoComplete="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tr('Nama penuh', 'Full name')} maxLength={80} />
+                    {touched && !nameOk && <em className="field-err">{tr('Isi nama dulu.', 'Please enter your name.')}</em>}
                   </label>
                   <label className="field">
-                    <span>No. telefon (WhatsApp)</span>
-                    <input type="tel" inputMode="tel" autoComplete="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="012-345 6789" maxLength={20} />
-                    {touched && !phoneOk && <em className="field-err">Nombor tak lengkap. Contoh: 012-345 6789</em>}
+                    <span>{tr('No. telefon (WhatsApp)', 'Phone (WhatsApp)')}</span>
+                    <input type="tel" inputMode="tel" autoComplete="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder={tr('012-345 6789', '+44 7700 900123')} maxLength={20} />
+                    {touched && !phoneOk && <em className="field-err">{tr('Nombor tak lengkap. Contoh: 012-345 6789', 'Number looks incomplete. Include your country code.')}</em>}
                   </label>
                   <label className="field">
-                    <span>E-mel <i>(tak wajib)</i></span>
-                    <input type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="nama@email.com" maxLength={120} />
+                    <span>{tr('E-mel', 'Email')} <i>({tr('tak wajib', 'optional')})</i></span>
+                    <input type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={tr('nama@email.com', 'name@email.com')} maxLength={120} />
                   </label>
                   <label className="field">
-                    <span>Catatan <i>(tak wajib)</i></span>
-                    <textarea rows={3} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="Contoh: bawa baby 1 tahun, nak tema raya" maxLength={300} />
+                    <span>{tr('Catatan', 'Notes')} <i>({tr('tak wajib', 'optional')})</i></span>
+                    <textarea rows={3} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder={tr('Contoh: bawa baby 1 tahun, nak tema raya', 'E.g. bringing a 1-year-old, celebrating a birthday')} maxLength={300} />
                   </label>
                 </div>
               </>
@@ -248,42 +268,48 @@ export default function Book() {
 
             {step === 4 && (
               <>
-                <h2>Cara bayar</h2>
-                <div className="pays" role="radiogroup" aria-label="Cara bayar">
+                <h2>{tr('Cara bayar', 'How to pay')}</h2>
+                <div className="pays" role="radiogroup" aria-label={tr('Cara bayar', 'How to pay')}>
                   <button type="button" role="radio" aria-checked={pay === 'qr'} className={`pay ${pay === 'qr' ? 'is-on' : ''}`} onClick={() => setPay('qr')}>
-                    <b>Scan QR DuitNow</b>
-                    <span>QR dan jumlah dipaparkan lepas ni. Lepas bayar, hantar resit di WhatsApp.</span>
+                    <b>{tr('Scan QR DuitNow', 'Scan DuitNow QR')}</b>
+                    <span>{tr('QR dan jumlah dipaparkan lepas ni. Lepas bayar, hantar resit di WhatsApp.', 'Works with Malaysian banking and e-wallet apps. The QR shows on the next page; send us the receipt on WhatsApp.')}</span>
                   </button>
                   <button type="button" role="radio" aria-checked={pay === 'cash'} className={`pay ${pay === 'cash' ? 'is-on' : ''}`} onClick={() => setPay('cash')}>
-                    <b>Tunai di studio</b>
-                    <span>Bayar bila sampai, sebelum sesi bermula.</span>
+                    <b>{tr('Tunai di studio', 'Cash at the studio')}</b>
+                    <span>{tr('Bayar bila sampai, sebelum sesi bermula.', 'Pay in Ringgit when you arrive, before your session starts.')}</span>
                   </button>
                 </div>
-                {touched && !pay && <p className="field-err">Pilih cara bayar.</p>}
-                <p className="book__fine">Dengan menekan Sahkan tempahan, kamu faham gambar adalah medium shot (separuh badan) dan sesi tamat ikut masa slot.</p>
+                {touched && !pay && <p className="field-err">{tr('Pilih cara bayar.', 'Choose how you will pay.')}</p>}
+                <p className="book__fine">
+                  {tr(
+                    'Dengan menekan Sahkan tempahan, kamu faham gambar adalah medium shot (separuh badan) dan sesi tamat ikut masa slot.',
+                    'By tapping Confirm booking, you understand photos are medium shots (waist up) and the session ends at the end of your slot.',
+                  )}
+                </p>
               </>
             )}
 
-            {err && <p className="book__err" role="alert">{err}</p>}
+            {err && <p className="book__err" role="alert">{friendlyError(err, lang)}</p>}
           </section>
 
-          <aside className={`summary ${sumOpen ? 'is-open' : ''}`} aria-label="Ringkasan tempahan">
-            <h2>Ringkasan</h2>
+          <aside className={`summary ${sumOpen ? 'is-open' : ''}`} aria-label={tr('Ringkasan tempahan', 'Booking summary')}>
+            <h2>{tr('Ringkasan', 'Summary')}</h2>
             <button type="button" className="summary__toggle" aria-expanded={sumOpen} onClick={() => setSumOpen((o) => !o)}>
-              {sumOpen ? 'Tutup ringkasan' : 'Lihat ringkasan'}
+              {sumOpen ? tr('Tutup ringkasan', 'Hide summary') : tr('Lihat ringkasan', 'View summary')}
             </button>
             <dl>
-              <div><dt>Pakej</dt><dd>{pkg.name} <span>RM{pkg.price}</span></dd></div>
-              {extraPax > 0 && <div><dt>Orang tambahan</dt><dd>{extraPax} <span>RM{extraPax * EXTRA_PAX_PRICE}</span></dd></div>}
-              {prints > 0 && <div><dt>Printed photos</dt><dd>{prints} <span>RM{prints * EXTRA_PRINT_PRICE}</span></dd></div>}
-              <div><dt>Backdrop</dt><dd>{bdObj ? <><i className="dot" style={{ '--c': bdObj.hex }} />{bdObj.name}</> : <em>Belum pilih</em>}</dd></div>
-              <div><dt>Bila</dt><dd>{time ? `${longDate(date)}, ${clock(Number(time.slice(0, 2)) * 60 + Number(time.slice(3)))}` : <em>Belum pilih</em>}</dd></div>
+              <div><dt>{tr('Pakej', 'Package')}</dt><dd>{pkg.name} <span>RM{pkg.price}</span></dd></div>
+              {extraPax > 0 && <div><dt>{tr('Orang tambahan', 'Extra people')}</dt><dd>{extraPax} <span>RM{extraPax * EXTRA_PAX_PRICE}</span></dd></div>}
+              {pkg.prints > 0 && <div><dt>Printed photos</dt><dd>{pkg.prints} <span className="free">{tr('PERCUMA', 'FREE')}</span></dd></div>}
+              {prints > 0 && <div><dt>{tr('Tambahan printed', 'Extra prints')}</dt><dd>{prints} <span>RM{prints * EXTRA_PRINT_PRICE}</span></dd></div>}
+              <div><dt>Backdrop</dt><dd>{bdObj ? <><i className="dot" style={{ '--c': bdObj.hex }} />{bdObj.name}</> : <em>{tr('Belum pilih', 'Not chosen')}</em>}</dd></div>
+              <div><dt>{tr('Bila', 'When')}</dt><dd>{time ? `${longDate(date, lang)}, ${clock(toMin(time), lang)}` : <em>{tr('Belum pilih', 'Not chosen')}</em>}</dd></div>
             </dl>
-            <p className="summary__total"><span>Jumlah</span><b>RM{total}</b></p>
+            <p className="summary__total"><span>{tr('Jumlah', 'Total')}</span><b>RM{total}</b></p>
             <div className="summary__actions">
-              {step > 0 && <button type="button" className="btn btn--line" onClick={() => go(step - 1)}>Balik</button>}
+              {step > 0 && <button type="button" className="btn btn--line" onClick={() => go(step - 1)}>{tr('Balik', 'Back')}</button>}
               <button type="button" className="btn btn--dark" onClick={next} disabled={sending}>
-                {sending ? 'Menempah…' : step < 4 ? 'Seterusnya' : 'Sahkan tempahan'}
+                {sending ? tr('Menempah…', 'Booking…') : step < 4 ? tr('Seterusnya', 'Next') : tr('Sahkan tempahan', 'Confirm booking')}
               </button>
             </div>
           </aside>
