@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Camera Self-Studio Website
 
 ## Overview
@@ -63,3 +64,6 @@ studio-website
 
 ## License
 This project is licensed under the MIT License.
+=======
+# rkstudio
+>>>>>>> 35ad44ed27a1928b0bc4bd323ffc1e74dc770113
