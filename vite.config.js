@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import { writeFileSync } from 'node:fs';
 
 // Alamat website sebenar. Tukar di Vercel: Settings → Environment Variables → VITE_SITE_URL
-const SITE = (process.env.VITE_SITE_URL || 'https://rkstudio.vercel.app').replace(/\/$/, '');
+const SITE = (process.env.VITE_SITE_URL || 'https://therkstudiobesut.vercel.app').replace(/\/$/, '');
 
 const seo = () => ({
   name: 'rk-seo',
