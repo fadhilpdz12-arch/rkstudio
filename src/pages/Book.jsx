@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { PACKAGES, BACKDROPS, EXTRA_PAX_PRICE, EXTRA_PRINT_PRICE, MAX_DAYS, dayNames, monthNames } from '../data';
+import { PACKAGES, BACKDROPS, EXTRA_PAX_PRICE, EXTRA_PRINT_PRICE, MAX_DAYS, WAIT_PRINTS, WAIT_PLAIN, dayNames } from '../data';
 import { nowMYT, addDays, dowOf, slotsFor, busyToMinutes, clock, longDate, hoursOf, toMin } from '../lib/time';
 import { supabase, friendlyError } from '../lib/supabase';
 import { backdropImg } from '../components/Backdrops';
@@ -21,6 +21,51 @@ function partOfDay(min, en) {
   if (min < 14 * 60) return en ? 'Midday' : 'Tengah hari';
   if (min < 19 * 60) return en ? 'Afternoon' : 'Petang';
   return en ? 'Evening' : 'Malam';
+}
+
+const MONTHS_LONG = {
+  ms: ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'],
+  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+};
+
+/** Kalendar bulanan: pilih mana-mana tarikh dari hari ini hingga setahun ke depan. */
+function Calendar({ value, min, max, today, onPick, lang, tr }) {
+  const [view, setView] = useState(value.slice(0, 7));
+  useEffect(() => { setView(value.slice(0, 7)); }, [value]);
+  const [y, m] = view.split('-').map(Number);
+  const first = `${view}-01`;
+  const lead = new Date(`${first}T00:00:00Z`).getUTCDay();
+  const len = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const cells = [...Array(lead).fill(null), ...Array.from({ length: len }, (_, i) => addDays(first, i))];
+  const shift = (n) => { const d = new Date(Date.UTC(y, m - 1 + n, 1)); setView(d.toISOString().slice(0, 7)); };
+  const canPrev = view > min.slice(0, 7);
+  const canNext = view < max.slice(0, 7);
+  const wd = dayNames(lang);
+  return (
+    <div className="cal">
+      <div className="cal__head">
+        <button type="button" onClick={() => shift(-1)} disabled={!canPrev} aria-label={tr('Bulan sebelum', 'Previous month')}>‹</button>
+        <b aria-live="polite">{MONTHS_LONG[lang === 'en' ? 'en' : 'ms'][m - 1]} {y}</b>
+        <button type="button" onClick={() => shift(1)} disabled={!canNext} aria-label={tr('Bulan seterusnya', 'Next month')}>›</button>
+      </div>
+      <div className="cal__grid" role="grid" aria-label={tr('Tarikh', 'Date')}>
+        {wd.map((d, i) => <span key={d} className={`cal__wd ${i >= 5 ? 'is-wk' : ''}`} aria-hidden="true">{d.slice(0, lang === 'en' ? 2 : 3)}</span>)}
+        {cells.map((d, i) => {
+          if (!d) return <span key={`x${i}`} />;
+          const off = d < min || d > max;
+          const wk = dowOf(d) >= 5;
+          return (
+            <button key={d} type="button" disabled={off} aria-pressed={d === value} aria-label={longDate(d, lang)}
+              className={`cal__day ${d === value ? 'is-on' : ''} ${wk ? 'is-wk' : ''} ${d === today ? 'is-today' : ''}`}
+              onClick={() => onPick(d)}>
+              {Number(d.slice(8))}
+            </button>
+          );
+        })}
+      </div>
+      <p className="cal__key"><i className="is-wk" />{tr('Jumaat & Sabtu: buka dari 8 pagi', 'Fri & Sat: open from 8 am')}</p>
+    </div>
+  );
 }
 
 function firstBookableDate() {
@@ -59,11 +104,11 @@ export default function Book() {
   useEffect(() => { setExtraPax((x) => Math.min(x, pkg.maxExtra)); setTime(''); }, [pkgId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const total = pkg.price + extraPax * EXTRA_PAX_PRICE + prints * EXTRA_PRINT_PRICE;
-  const days = useMemo(() => Array.from({ length: MAX_DAYS }, (_, i) => addDays(startDate, i)), [startDate]);
+  const lastDate = useMemo(() => addDays(nowMYT().date, MAX_DAYS), []);
 
   const loadBusy = async (d) => {
     setBusy({ loading: true, list: [], error: null });
-    const { data, error } = await supabase.rpc('get_busy', { p_date: d });
+    const { data, error } = await supabase.rpc('get_slots_busy', { p_date: d });
     if (error) setBusy({ loading: false, list: [], error });
     else setBusy({ loading: false, list: busyToMinutes(data || [], d), error: null });
   };
@@ -76,6 +121,13 @@ export default function Book() {
     return Object.entries(g);
   }, [slots, en]);
   const anyFree = slots.some((s) => s.available);
+  // Ada customer betul-betul sebelum slot ni? Kalau ya, mungkin perlu tunggu sekejap.
+  const waitMin = useMemo(() => {
+    if (!time) return 0;
+    const t = toMin(time);
+    const prev = busy.list.filter((b) => b.end <= t && t - b.end < 15).sort((a, b) => b.end - a.end)[0];
+    return prev ? (prev.prints ? WAIT_PRINTS : WAIT_PLAIN) : 0;
+  }, [time, busy.list]);
 
   const phoneOk = form.phone.replace(/\D/g, '').length >= 9;
   const nameOk = form.name.trim().length >= 2;
@@ -111,12 +163,19 @@ export default function Book() {
     const booking = {
       code: data.code, total: data.total, pkg: pkg.name, pkgId: pkg.id, extraPax, prints,
       backdrop: BACKDROPS.find((b) => b.id === bd).name, date, time, minutes: pkg.minutes,
-      name: form.name.trim(), phone: form.phone, pay, starts_at: data.starts_at,
+      name: form.name.trim(), phone: form.phone, pay, starts_at: data.starts_at, waitMin,
     };
     try { sessionStorage.setItem(`rk-booking-${data.code}`, JSON.stringify(booking)); } catch { /* tak apa */ }
     nav(`/siap/${data.code}`, { state: booking });
   }
 
+  const waitNote = waitMin > 0 && (
+    <p className="waitnote" role="status">
+                    {en
+                      ? <><b>Heads up:</b> there&apos;s a session just before yours. You may need to wait about <b>{waitMin} minutes</b> while we {waitMin === WAIT_PRINTS ? 'print their photos, tidy up and change the backdrop' : 'tidy up and change the backdrop'}. Your full session time stays the same.</>
+                      : <><b>Makluman:</b> ada customer sebelum masa ni. Kamu mungkin perlu tunggu lebih kurang <b>{waitMin} minit</b> untuk kami kemas dan tukar backdrop{waitMin === WAIT_PRINTS ? ' serta siapkan printed photos mereka' : ''}. Masa sesi kamu tetap penuh.</>}
+                  </p>
+  );
   const bdObj = BACKDROPS.find((b) => b.id === bd);
   const unit = (n) => (en ? (n > 1 ? 'people' : 'person') : 'orang');
   const today = nowMYT().date;
@@ -197,21 +256,8 @@ export default function Book() {
             {step === 2 && (
               <>
                 <h2>{tr('Pilih tarikh & masa', 'Choose a date & time')}</h2>
-                <div className="days" role="listbox" aria-label={tr('Tarikh', 'Date')}>
-                  {days.map((d) => {
-                    const dt = new Date(`${d}T00:00:00Z`);
-                    const wk = dowOf(d) === 5 || dowOf(d) === 6;
-                    return (
-                      <button key={d} type="button" role="option" aria-selected={d === date}
-                        className={`day ${d === date ? 'is-on' : ''} ${wk ? 'is-wk' : ''}`}
-                        onClick={() => { setDate(d); setTime(''); }}>
-                        <small>{d === today ? tr('Hari ini', 'Today') : dayNames(lang)[dt.getUTCDay()].slice(0, 3)}</small>
-                        <b>{dt.getUTCDate()}</b>
-                        <small>{monthNames(lang)[dt.getUTCMonth()]}</small>
-                      </button>
-                    );
-                  })}
-                </div>
+                <Calendar value={date} min={startDate} max={lastDate} today={today} lang={lang} tr={tr}
+                  onPick={(d) => { setDate(d); setTime(''); }} />
                 <p className="days__hint">
                   {en
                     ? `${longDate(date, lang)}. Open ${clock(hoursOf(date).open, lang)} to ${clock(hoursOf(date).close, lang)}. ${pkg.name} session: ${pkg.minutes} min. Times are Malaysia time.`
@@ -233,8 +279,9 @@ export default function Book() {
                           </button>
                         ))}
                       </div>
+                      {list.some((s) => s.time === time) && waitNote}
                     </div>
-                  )) : <p className="empty">{tr('Slot hari ni dah penuh. Cuba pilih tarikh lain di atas.', 'This day is fully booked. Try another date above.')}</p>
+                  )) : <p className="empty">{tr('Slot tarikh ni dah penuh. Cuba pilih tarikh lain di atas.', 'This day is fully booked. Try another date above.')}</p>
                 )}
                 {touched && !time && <p className="field-err">{tr('Pilih satu masa yang masih kosong.', 'Pick an open time.')}</p>}
               </>

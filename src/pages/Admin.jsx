@@ -137,7 +137,7 @@ export default function Admin() {
             <label className="field field--inline"><span>Dari</span><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
             <label className="field field--inline"><span>Tempoh</span>
               <select value={span} onChange={(e) => setSpan(Number(e.target.value))}>
-                <option value={1}>1 hari</option><option value={7}>7 hari</option><option value={30}>30 hari</option><option value={60}>60 hari</option>
+                <option value={1}>1 hari</option><option value={7}>7 hari</option><option value={30}>30 hari</option><option value={60}>60 hari</option><option value={180}>6 bulan</option><option value={365}>1 tahun</option>
               </select>
             </label>
             <button className="btn btn--line btn--small" type="button" onClick={() => load()}>Muat semula</button>

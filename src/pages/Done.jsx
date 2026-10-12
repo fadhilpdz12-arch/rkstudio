@@ -110,6 +110,13 @@ export default function Done() {
         <p className="done__kicker">{tr('Slot dah ditempah', "You're all booked")}</p>
         <h1 className="done__code">{b.code}</h1>
         <p className="done__keep">{tr('Simpan kod ni. Tunjuk kepada kami bila sampai.', 'Keep this code and show it to us when you arrive.')}</p>
+        {b.waitMin > 0 && (
+          <p className="waitnote">
+            {en
+              ? <>There&apos;s a session just before yours, so you may need to wait about <b>{b.waitMin} minutes</b> while we tidy up and change the backdrop. Your full session time stays the same.</>
+              : <>Ada customer sebelum masa kamu, jadi mungkin perlu tunggu lebih kurang <b>{b.waitMin} minit</b> untuk kami kemas dan tukar backdrop. Masa sesi kamu tetap penuh.</>}
+          </p>
+        )}
 
         <dl className="done__list">
           <div><dt>{tr('Bila', 'When')}</dt><dd>{when}</dd></div>

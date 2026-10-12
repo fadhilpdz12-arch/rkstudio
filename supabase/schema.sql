@@ -60,7 +60,20 @@ returns table(starts_at timestamptz, ends_at timestamptz)
 language sql stable security definer set search_path = public as $$
   select b.starts_at, b.ends_at from public.rk_bookings b
   where b.status <> 'cancelled'
-    and p_date between (now() at time zone 'Asia/Kuala_Lumpur')::date - 1 and (now() at time zone 'Asia/Kuala_Lumpur')::date + 61
+    and p_date between (now() at time zone 'Asia/Kuala_Lumpur')::date - 1 and (now() at time zone 'Asia/Kuala_Lumpur')::date + 370
+    and b.starts_at < ((p_date + 1)::timestamp at time zone 'Asia/Kuala_Lumpur')
+    and b.ends_at   > (p_date::timestamp at time zone 'Asia/Kuala_Lumpur');
+$$;
+
+-- Sama seperti get_busy + sama ada customer tu ada printed photos (untuk notis "mungkin perlu tunggu 5/10 minit").
+create or replace function public.get_slots_busy(p_date date)
+returns table(starts_at timestamptz, ends_at timestamptz, has_prints boolean)
+language sql stable security definer set search_path = public as $$
+  select b.starts_at, b.ends_at,
+         (b.package in ('twogether','vibetribe','chaoscrew') or b.extra_prints > 0) as has_prints
+  from public.rk_bookings b
+  where b.status <> 'cancelled'
+    and p_date between (now() at time zone 'Asia/Kuala_Lumpur')::date - 1 and (now() at time zone 'Asia/Kuala_Lumpur')::date + 370
     and b.starts_at < ((p_date + 1)::timestamp at time zone 'Asia/Kuala_Lumpur')
     and b.ends_at   > (p_date::timestamp at time zone 'Asia/Kuala_Lumpur');
 $$;
@@ -114,7 +127,7 @@ begin
 
   v_start := (p_date + v_t) at time zone 'Asia/Kuala_Lumpur';
   if v_start < now() + interval '20 minutes' then raise exception 'TOO_SOON'; end if;
-  if v_start > now() + interval '60 days' then raise exception 'TOO_FAR'; end if;
+  if v_start > now() + interval '366 days' then raise exception 'TOO_FAR'; end if;  -- tempahan dibuka setahun ke depan
   v_end := v_start + make_interval(mins => v_dur + 5);
 
   if (select count(*) from public.rk_bookings
@@ -164,7 +177,7 @@ returns setof public.rk_bookings
 language plpgsql volatile security definer set search_path = public as $$
 begin
   if not public.rk_check_pin(p_pin) then return; end if;
-  if p_to - p_from > 62 then p_to := p_from + 62; end if;
+  if p_to - p_from > 370 then p_to := p_from + 370; end if;
   return query select * from public.rk_bookings
     where starts_at >= (p_from::timestamp at time zone 'Asia/Kuala_Lumpur')
       and starts_at <  ((p_to + 1)::timestamp at time zone 'Asia/Kuala_Lumpur')
@@ -204,10 +217,10 @@ end $$;
 
 -- ── Kebenaran: browser hanya boleh panggil fungsi awam ──
 revoke all on function public.rk_pkg(text), public.rk_check_pin(text), public.rk_client_ip_hash() from public, anon, authenticated;
-revoke all on function public.get_busy(date), public.create_booking(text,int,int,text,date,text,text,text,text,text,text),
+revoke all on function public.get_busy(date), public.get_slots_busy(date), public.create_booking(text,int,int,text,date,text,text,text,text,text,text),
   public.admin_login(text), public.admin_list(text,date,date), public.admin_set_status(text,uuid,text),
   public.admin_block(text,date,text,int,text), public.admin_change_pin(text,text) from public;
-grant execute on function public.get_busy(date), public.create_booking(text,int,int,text,date,text,text,text,text,text,text),
+grant execute on function public.get_busy(date), public.get_slots_busy(date), public.create_booking(text,int,int,text,date,text,text,text,text,text,text),
   public.admin_login(text), public.admin_list(text,date,date), public.admin_set_status(text,uuid,text),
   public.admin_block(text,date,text,int,text), public.admin_change_pin(text,text) to anon, authenticated;
 

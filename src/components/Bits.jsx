@@ -96,7 +96,7 @@ export function Notes() {
   const items = [
     [tr('Medium shot je', 'Medium shots only'), tr('Kamera dah disetkan untuk gambar separuh badan. Gambar seluruh badan tak dapat.', 'The camera is set for waist-up framing. Full-body shots are not possible.')],
     [tr('Kamu ambil sendiri', 'No photographer, just you'), tr('Ni studio layan diri. Tiada jurugambar dalam bilik, jadi bebas nak buat gaya apa pun.', "It's self-service. No photographer in the room, so pose however you like.")],
-    [tr('Ikut masa', 'Sessions are timed'), tr('Sesi bermula dan tamat ikut slot. Datang awal sikit supaya masa sesi tak terbuang.', 'Your session starts and ends with your slot. Arrive a little early so you get the full time.')],
+    [tr('Ikut masa', 'Sessions are timed'), tr('Sesi bermula dan tamat ikut slot. Kalau ada customer sebelum kamu, mungkin perlu tunggu lebih kurang 5 minit (10 minit jika mereka ada printed photos) untuk kami kemas dan tukar backdrop. Masa sesi kamu tetap penuh.', "Your session runs for the full length of your slot. If there's a group right before you, there may be a short wait of about 5 minutes (10 if they have printed photos) while we tidy up and change the backdrop. You still get your full session time.")],
     [tr('Pandang kamera', 'Look at the camera'), tr('TV tu untuk preview. Masa snap, mata ke kamera supaya gambar nampak terus ke depan.', 'The TV is just for previews. Look into the camera when you shoot.')],
   ];
   return (

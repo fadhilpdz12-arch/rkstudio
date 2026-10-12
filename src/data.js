@@ -70,7 +70,9 @@ export const monthNames = (lang) => (lang === 'en' ? MONTH_NAMES_EN : MONTH_NAME
 export const SLOT_STEP = 15;     // minit antara slot
 export const BUFFER_MIN = 5;     // masa tukar giliran
 export const LEAD_MIN = 20;      // paling awal boleh tempah sebelum sesi
-export const MAX_DAYS = 60;
+export const MAX_DAYS = 365;   // tempahan dibuka sehingga setahun ke depan
+export const WAIT_PRINTS = 10;  // minit tunggu jika customer sebelum ada printed photos
+export const WAIT_PLAIN = 5;    // minit kemas & tukar backdrop
 
 // Nama penerima pada QR DuitNow — customer semak sebelum bayar (elak scam QR palsu)
 export const PAY_NAME = 'KASMA MURNI BINTI MAT DAU';

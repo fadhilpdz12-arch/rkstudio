@@ -64,6 +64,7 @@ export function busyToMinutes(busy, date) {
   return busy.map((b) => ({
     start: Math.round((Date.parse(b.starts_at) + MYT - base) / 60000),
     end: Math.round((Date.parse(b.ends_at) + MYT - base) / 60000),
+    prints: !!b.has_prints,
   }));
 }
 

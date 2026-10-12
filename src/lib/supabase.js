@@ -14,7 +14,7 @@ const MESSAGES = {
   TOO_MANY: ['Nombor ni dah ada 3 tempahan belum disahkan. WhatsApp kami untuk bantuan.', 'This number already has 3 unconfirmed bookings. WhatsApp us for help.'],
   BAD_PHONE: ['Nombor telefon tak lengkap. Contoh: 012-345 6789', 'Phone number looks incomplete. Include your country code, e.g. +44 7700 900123'],
   BAD_NAME: ['Isi nama penuh dulu.', 'Please enter your name.'],
-  TOO_FAR: ['Tempahan boleh dibuat sehingga 60 hari dari sekarang.', 'Bookings open up to 60 days ahead.'],
+  TOO_FAR: ['Tempahan boleh dibuat sehingga setahun dari sekarang.', 'Bookings open up to a year ahead.'],
   BAD_PIN: ['Username atau kata laluan salah.', 'Wrong username or password.'],
   LOCKED: ['Terlalu banyak cubaan salah. Cuba lagi selepas 15 minit.', 'Too many wrong attempts. Try again in 15 minutes.'],
   RATE_LIMIT: ['Terlalu banyak tempahan dari sambungan ini. Cuba lagi sejam lagi, atau WhatsApp kami.', 'Too many bookings from this connection. Try again in an hour, or WhatsApp us.'],
