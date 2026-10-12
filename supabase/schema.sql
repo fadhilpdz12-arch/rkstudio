@@ -47,7 +47,7 @@ revoke all on public.rk_bookings, public.rk_admin, public.rk_admin_fail, public.
 create or replace function public.rk_pkg(p text, out price int, out dur int, out max_extra int)
 language sql immutable set search_path = public as $$
   select v.price, v.dur, v.max_extra from (values
-    ('spotlight',25,10,1),
+    ('spotlight',25,10,0),  -- pakej seorang: tiada tambah orang
     ('twogether',42,25,2),
     ('vibetribe',75,30,2),
     ('chaoscrew',100,40,2)

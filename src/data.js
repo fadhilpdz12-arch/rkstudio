@@ -13,7 +13,7 @@ export const CONTACT = {
 
 export const PACKAGES = [
   {
-    id: 'spotlight', name: 'Spotlight', price: 25, pax: 1, maxExtra: 1, minutes: 10, prints: 0,
+    id: 'spotlight', name: 'Spotlight', price: 25, pax: 1, maxExtra: 0, minutes: 10, prints: 0,
     blurb: 'Untuk sorang. Masa untuk diri sendiri.',
     blurbEn: 'Just you. Some time for yourself.',
     extras: [], extrasEn: [],

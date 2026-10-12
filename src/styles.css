@@ -482,6 +482,7 @@ ul, ol { padding: 0; list-style: none; }
 .addons { margin-top: 1.4rem; display: grid; gap: 10px; }
 .addon { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 14px 16px; border-radius: 14px; background: rgba(255, 255, 255, .45); border: 1px solid rgba(29, 24, 19, .1); }
 .addon p { font-size: .86rem; color: var(--ink-soft); }
+.addon--note { font-size: .92rem; color: var(--ink-soft); display: block; }
 .stepper { display: flex; align-items: center; gap: .3rem; }
 .stepper button { width: 42px; height: 42px; border-radius: 50%; border: 1.5px solid rgba(29, 24, 19, .25); background: #fff; font-size: 1.25rem; line-height: 1; }
 .stepper button:disabled { opacity: .35; cursor: not-allowed; }

@@ -227,6 +227,7 @@ export default function Book() {
                   ))}
                 </div>
                 <div className="addons">
+                  {pkg.maxExtra > 0 ? (
                   <div className="addon">
                     <div>
                       <b>{tr('Orang tambahan', 'Extra people')}</b>
@@ -234,6 +235,9 @@ export default function Book() {
                     </div>
                     <Stepper value={extraPax} max={pkg.maxExtra} onChange={setExtraPax} label={tr('orang tambahan', 'extra people')} lessLabel={tr('Kurang', 'Fewer')} moreLabel={tr('Tambah', 'More')} />
                   </div>
+                  ) : (
+                    <p className="addon addon--note">{tr('Spotlight untuk seorang sahaja. Datang berdua? Pilih Twogether.', 'Spotlight is for one person only. Coming as two? Choose Twogether.')}</p>
+                  )}
                   <div className="addon">
                     <div>
                       <b>{tr('Tambah printed photos (4R)', 'Extra printed photos (4R)')}</b>
