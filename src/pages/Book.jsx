@@ -59,7 +59,7 @@ export default function Book() {
   useEffect(() => { setExtraPax((x) => Math.min(x, pkg.maxExtra)); setTime(''); }, [pkgId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const total = pkg.price + extraPax * EXTRA_PAX_PRICE + prints * EXTRA_PRINT_PRICE;
-  const days = useMemo(() => Array.from({ length: 30 }, (_, i) => addDays(startDate, i)).filter((d, i) => i < MAX_DAYS), [startDate]);
+  const days = useMemo(() => Array.from({ length: MAX_DAYS }, (_, i) => addDays(startDate, i)), [startDate]);
 
   const loadBusy = async (d) => {
     setBusy({ loading: true, list: [], error: null });
