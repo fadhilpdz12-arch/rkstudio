@@ -48,3 +48,9 @@ Lihat **[SECURITY.md](SECURITY.md)**. Struktur database disandarkan dalam **`sup
 supaya projek Supabase plan percuma tak di-pause. Ia hanya membaca, tiada data diubah.
 Pilihan: set env `CRON_SECRET` (apa-apa teks rawak panjang) di Vercel supaya hanya Vercel Cron boleh panggil endpoint tu.
 Semak di Vercel → Project → Settings → Cron Jobs.
+
+## Notifikasi Telegram (booking baru)
+`supabase/notify_telegram.sql` pasang trigger dalam database: setiap kali customer tempah, bot Telegram hantar mesej
+(tarikh, masa, pakej, bayaran, nama, nombor WhatsApp customer, kod). Slot yang admin tutup tak dihantar.
+Token bot & chat ID disimpan dalam **Supabase Vault** (`rk_tg_token`, `rk_tg_chats`, pilihan `rk_site_url`), bukan dalam repo.
+Kalau Telegram gagal, tempahan customer tetap masuk seperti biasa. Arahan set & uji ada di hujung fail SQL tu.
