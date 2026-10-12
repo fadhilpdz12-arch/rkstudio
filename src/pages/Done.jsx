@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useLocation, useParams, Link } from 'react-router-dom';
 import { longDate, clock, toMin } from '../lib/time';
-import { BACKDROPS } from '../data';
+import { BACKDROPS, PAY_NAME } from '../data';
 import { waLink, WaIcon } from '../components/Bits';
 
 const qrFiles = import.meta.glob('../assets/pay/qr.{png,jpg,jpeg,webp}', { eager: true, import: 'default' });
@@ -108,6 +108,7 @@ export default function Done() {
             {QR
               ? <img src={QR} alt="QR DuitNow RK Studio" className="done__qr" />
               : <p className="done__noqr">QR DuitNow akan dihantar di WhatsApp. Tekan butang di bawah.</p>}
+            <p className="done__payee">Pastikan nama penerima ialah <b>{PAY_NAME}</b>. Kalau nama lain, jangan bayar dan hubungi kami.</p>
             <p>Masukkan <b>{b.code}</b> sebagai rujukan. Lepas bayar, hantar resit kepada kami di WhatsApp.</p>
             <a className="btn btn--dark" href={waLink(msg)} target="_blank" rel="noreferrer"><WaIcon />Hantar resit di WhatsApp</a>
           </div>

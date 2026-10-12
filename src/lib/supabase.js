@@ -15,7 +15,10 @@ const MESSAGES = {
   BAD_PHONE: 'Nombor telefon tak lengkap. Contoh: 012-345 6789',
   BAD_NAME: 'Isi nama penuh dulu.',
   TOO_FAR: 'Tempahan boleh dibuat sehingga 60 hari dari sekarang.',
-  BAD_PIN: 'Kata laluan admin salah.',
+  BAD_PIN: 'Username atau kata laluan salah.',
+  LOCKED: 'Terlalu banyak cubaan salah. Cuba lagi selepas 15 minit.',
+  RATE_LIMIT: 'Terlalu banyak tempahan dari sambungan ini. Cuba lagi sejam lagi, atau WhatsApp kami.',
+  BAD_EMAIL: 'Format e-mel tak betul. Contoh: nama@email.com',
 };
 
 export function friendlyError(err) {

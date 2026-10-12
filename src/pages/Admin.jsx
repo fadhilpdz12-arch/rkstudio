@@ -14,37 +14,57 @@ const STATUS = {
 const MYT = 8 * 3600 * 1000;
 const local = (iso) => { const d = new Date(Date.parse(iso) + MYT); return { date: d.toISOString().slice(0, 10), min: d.getUTCHours() * 60 + d.getUTCMinutes() }; };
 
-function getPin() { try { return sessionStorage.getItem('rk-admin') || ''; } catch { return ''; } }
-function setPinStore(v) { try { if (v) sessionStorage.setItem('rk-admin', v); else sessionStorage.removeItem('rk-admin'); } catch { /* */ } }
+const IDLE_MS = 20 * 60 * 1000; // log keluar automatik selepas 20 minit tiada aktiviti
 
 export default function Admin() {
-  const [pin, setPin] = useState(getPin());
+  // kelayakan disimpan dalam memori sahaja (bukan localStorage) — refresh = log masuk semula
+  const [pin, setPin] = useState('');
+  const [user, setUser] = useState('');
   const [input, setInput] = useState('');
+  const [busyLogin, setBusyLogin] = useState(false);
   const [from, setFrom] = useState(nowMYT().date);
   const [span, setSpan] = useState(7);
   const [rows, setRows] = useState(null);
   const [err, setErr] = useState('');
   const [busyId, setBusyId] = useState('');
-  const [block, setBlock] = useState({ date: nowMYT().date, time: '18:00', minutes: 60, note: '' });
+  const [block, setBlock] = useState({ date: nowMYT().date, time: '17:00', minutes: 60, note: '' });
 
   const load = async (p = pin) => {
     setErr('');
     const { data, error } = await supabase.rpc('admin_list', { p_pin: p, p_from: from, p_to: addDays(from, span - 1) });
-    if (error) {
-      setErr(friendlyError(error));
-      if (/BAD_PIN/.test(error.message)) { setPin(''); setPinStore(''); }
-      return false;
-    }
+    if (error) { setErr(friendlyError(error)); return false; }
     setRows(data);
     return true;
   };
+
+  useEffect(() => {
+    const m = document.createElement('meta');
+    m.name = 'robots'; m.content = 'noindex, nofollow';
+    document.head.appendChild(m);
+    return () => m.remove();
+  }, []);
+
+  // log keluar bila tiada aktiviti
+  useEffect(() => {
+    if (!pin) return undefined;
+    let t = setTimeout(() => setPin(''), IDLE_MS);
+    const bump = () => { clearTimeout(t); t = setTimeout(() => setPin(''), IDLE_MS); };
+    ['pointerdown', 'keydown', 'scroll'].forEach((e) => window.addEventListener(e, bump, { passive: true }));
+    return () => { clearTimeout(t); ['pointerdown', 'keydown', 'scroll'].forEach((e) => window.removeEventListener(e, bump)); };
+  }, [pin]);
 
   useEffect(() => { if (pin) load(); }, [pin, from, span]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const login = async (e) => {
     e.preventDefault();
-    const ok = await load(input);
-    if (ok) { setPin(input); setPinStore(input); }
+    setErr(''); setBusyLogin(true);
+    const cred = `${user.trim().toLowerCase()}:${input}`;
+    const { data, error } = await supabase.rpc('admin_login', { p_pin: cred });
+    setBusyLogin(false);
+    if (error) { setErr(friendlyError(error)); return; }
+    if (data !== 'OK') { setErr(friendlyError({ message: data })); setInput(''); return; }
+    setInput('');
+    setPin(cred);
   };
 
   const setStatus = async (id, status) => {
@@ -58,6 +78,23 @@ export default function Admin() {
     e.preventDefault();
     const { error } = await supabase.rpc('admin_block', { p_pin: pin, p_date: block.date, p_time: block.time, p_minutes: Number(block.minutes), p_note: block.note || null });
     if (error) setErr(friendlyError(error)); else { setBlock({ ...block, note: '' }); load(); }
+  };
+
+  // sandaran: muat turun senarai tempahan sebagai CSV (buka dengan Excel / Google Sheets)
+  const exportCsv = () => {
+    const cols = ['code', 'status', 'starts_at', 'package', 'extra_pax', 'extra_prints', 'backdrop', 'name', 'phone', 'email', 'payment', 'total', 'note', 'created_at'];
+    const esc = (v) => {
+      let t = v == null ? '' : String(v);
+      if (/^[=+\-@]/.test(t)) t = `'${t}`; // elak formula injection dalam Excel
+      return `"${t.replace(/"/g, '""')}"`;
+    };
+    const lines = [cols.join(',')].concat((rows || []).map((r) => cols.map((c) => esc(r[c])).join(',')));
+    const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `rk-tempahan-${from}-${span}hari.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   };
 
   const grouped = useMemo(() => {
@@ -77,11 +114,15 @@ export default function Admin() {
         <form onSubmit={login} className="admin__login">
           <h1 className="display">Admin</h1>
           <label className="field">
+            <span>Username</span>
+            <input value={user} onChange={(e) => setUser(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck="false" autoFocus />
+          </label>
+          <label className="field">
             <span>Kata laluan</span>
-            <input type="password" value={input} onChange={(e) => setInput(e.target.value)} autoComplete="current-password" autoFocus />
+            <input type="password" value={input} onChange={(e) => setInput(e.target.value)} autoComplete="current-password" />
           </label>
           {err && <p className="field-err">{err}</p>}
-          <button className="btn btn--dark" type="submit">Masuk</button>
+          <button className="btn btn--dark" type="submit" disabled={busyLogin || !user || !input}>{busyLogin ? 'Menyemak…' : 'Masuk'}</button>
         </form>
       </main>
     );
@@ -96,11 +137,12 @@ export default function Admin() {
             <label className="field field--inline"><span>Dari</span><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
             <label className="field field--inline"><span>Tempoh</span>
               <select value={span} onChange={(e) => setSpan(Number(e.target.value))}>
-                <option value={1}>1 hari</option><option value={7}>7 hari</option><option value={30}>30 hari</option>
+                <option value={1}>1 hari</option><option value={7}>7 hari</option><option value={30}>30 hari</option><option value={60}>60 hari</option>
               </select>
             </label>
             <button className="btn btn--line btn--small" type="button" onClick={() => load()}>Muat semula</button>
-            <button className="btn btn--line btn--small" type="button" onClick={() => { setPin(''); setPinStore(''); }}>Keluar</button>
+            <button className="btn btn--line btn--small" type="button" onClick={exportCsv} disabled={!rows || !rows.length}>Muat turun CSV</button>
+            <button className="btn btn--line btn--small" type="button" onClick={() => { setPin(''); setRows(null); }}>Keluar</button>
           </div>
           <p className="admin__stats">{stats.count} tempahan, RM{stats.sum}. {stats.pending} belum disahkan.</p>
         </header>
@@ -140,6 +182,8 @@ export default function Admin() {
             })}
           </section>
         ))}
+
+        <p className="admin__safety">Sebelum tekan <b>Sahkan</b> untuk bayaran QR, semak duit betul-betul dah masuk dalam app bank. Jangan percaya screenshot resit sahaja, sebab resit boleh dipalsukan.</p>
 
         <form className="admin__block" onSubmit={addBlock}>
           <h2>Tutup slot</h2>

@@ -6,8 +6,7 @@ export const CONTACT = {
   tiktok: 'https://www.tiktok.com/@rkstudiobesut',
   tiktokHandle: '@rkstudiobesut',
   beacons: 'https://beacons.ai/rkstudio',
-  // TODO: tukar kepada link Google Maps sebenar (Share > Copy link)
-  maps: 'https://www.google.com/maps/search/?api=1&query=RK+Studio+Limbongan+Besut',
+  maps: 'https://maps.app.goo.gl/xMm264ejBH5iPhow8',
   waze: 'https://waze.com/ul?q=RK%20Studio%20Limbongan%20Besut',
   area: 'Limbongan, Besut, Terengganu',
 };
@@ -47,11 +46,11 @@ export const BACKDROPS = [
 
 // Waktu operasi (waktu Malaysia). 0 = Ahad ... 6 = Sabtu
 export const HOURS = {
-  0: ['18:00', '22:00'],
-  1: ['18:00', '22:00'],
-  2: ['18:00', '22:00'],
-  3: ['18:00', '22:00'],
-  4: ['18:00', '22:00'],
+  0: ['17:00', '22:00'],
+  1: ['17:00', '22:00'],
+  2: ['17:00', '22:00'],
+  3: ['17:00', '22:00'],
+  4: ['17:00', '22:00'],
   5: ['08:00', '22:00'],
   6: ['08:00', '22:00'],
 };
@@ -63,3 +62,6 @@ export const SLOT_STEP = 15;     // minit antara slot
 export const BUFFER_MIN = 5;     // masa tukar giliran
 export const LEAD_MIN = 20;      // paling awal boleh tempah sebelum sesi
 export const MAX_DAYS = 60;
+
+// Nama penerima pada QR DuitNow — customer semak sebelum bayar (elak scam QR palsu)
+export const PAY_NAME = 'KASMA MURNI BINTI MAT DAU';

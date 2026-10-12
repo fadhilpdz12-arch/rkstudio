@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 const files = import.meta.glob('../assets/gallery/g*.webp', { eager: true, import: 'default' });
 const pick = (n, s = '') => files[`../assets/gallery/g${n}${s}.webp`];
@@ -77,7 +78,7 @@ export default function Gallery() {
         <p className="gallery__more">Nak tengok lagi? <a href="https://www.tiktok.com/@rkstudiobesut" target="_blank" rel="noreferrer">TikTok kami ada lagi banyak</a>.</p>
       </div>
 
-      {open >= 0 && (
+      {open >= 0 && createPortal(
         <div className="lightbox" role="dialog" aria-modal="true" aria-label={PHOTOS[open].cap} onClick={close} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
           <figure onClick={(e) => e.stopPropagation()}>
             <img src={pick(PHOTOS[open].n)} alt={PHOTOS[open].alt} />
@@ -86,7 +87,8 @@ export default function Gallery() {
           <button className="lightbox__nav lightbox__nav--prev" onClick={(e) => { e.stopPropagation(); step(-1); }} aria-label="Gambar sebelum">‹</button>
           <button className="lightbox__nav lightbox__nav--next" onClick={(e) => { e.stopPropagation(); step(1); }} aria-label="Gambar seterusnya">›</button>
           <button className="lightbox__close" onClick={close} aria-label="Tutup">×</button>
-        </div>
+        </div>,
+        document.body,
       )}
     </section>
   );
