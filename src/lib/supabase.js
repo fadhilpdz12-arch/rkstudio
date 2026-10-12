@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 
 // Kunci "publishable" memang selamat untuk didedahkan di website.
 // Semua data booking dilindungi di database (RLS + fungsi khas).
-const URL = import.meta.env.VITE_SUPABASE_URL || 'https://yqwfkflckyiiwfxphynj.supabase.co';
-const KEY = import.meta.env.VITE_SUPABASE_KEY || 'sb_publishable_1NMr4c2J_ProEP5rNfeFEA_fFJm8L10';
+const URL = import.meta.env.VITE_SUPABASE_URL || 'https://jszfyvquexewkqrcpbfn.supabase.co';
+const KEY = import.meta.env.VITE_SUPABASE_KEY || 'sb_publishable_cco9Z4dGRbbRQBn4yO0KWA_lffHEYxZ';
 
 export const supabase = createClient(URL, KEY, { auth: { persistSession: false } });
 
