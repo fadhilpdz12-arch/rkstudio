@@ -5,6 +5,7 @@ import { nowMYT, addDays, dowOf, slotsFor, busyToMinutes, clock, longDate, hours
 import { supabase, friendlyError } from '../lib/supabase';
 import { backdropImg } from '../components/Backdrops';
 import { useLang } from '../i18n';
+import { waLink, WaIcon } from '../components/Bits';
 
 function Stepper({ value, min = 0, max, onChange, label, lessLabel, moreLabel }) {
   return (
@@ -176,6 +177,16 @@ export default function Book() {
                       : <><b>Makluman:</b> ada customer sebelum masa ni. Kamu mungkin perlu tunggu lebih kurang <b>{waitMin} minit</b> untuk kami kemas dan tukar backdrop{waitMin === WAIT_PRINTS ? ' serta siapkan printed photos mereka' : ''}. Masa sesi kamu tetap penuh.</>}
                   </p>
   );
+  const HELP = [
+    tr('Tekan satu pakej ikut berapa orang. Lepas tu tekan butang Seterusnya di bawah.', 'Tap a package that fits your group. Then tap Next at the bottom.'),
+    tr('Tekan satu warna backdrop yang kamu suka. Lepas tu tekan Seterusnya.', 'Tap the backdrop colour you like. Then tap Next.'),
+    tr('Tekan tarikh di kalendar, kemudian tekan satu masa yang masih kosong. Lepas tu tekan Seterusnya.', 'Tap a date on the calendar, then tap an open time. Then tap Next.'),
+    tr('Isi nama dan nombor WhatsApp kamu. Lepas tu tekan Seterusnya.', 'Enter your name and WhatsApp number. Then tap Next.'),
+    tr('Pilih cara bayar, kemudian tekan Sahkan tempahan. Siap!', 'Choose how to pay, then tap Confirm booking. Done!'),
+  ];
+  const guide = (
+    <p className="book__guide"><b>{step + 1}/5</b><span>{HELP[step]}</span></p>
+  );
   const bdObj = BACKDROPS.find((b) => b.id === bd);
   const unit = (n) => (en ? (n > 1 ? 'people' : 'person') : 'orang');
   const today = nowMYT().date;
@@ -202,6 +213,7 @@ export default function Book() {
             {step === 0 && (
               <>
                 <h2>{tr('Pilih pakej', 'Choose a package')}</h2>
+                {guide}
                 <div className="pick-pkgs">
                   {PACKAGES.map((p) => (
                     <label key={p.id} className={`pick-pkg ${pkgId === p.id ? 'is-on' : ''}`}>
@@ -240,6 +252,7 @@ export default function Book() {
             {step === 1 && (
               <>
                 <h2>{tr('Pilih backdrop', 'Choose a backdrop')}</h2>
+                {guide}
                 <div className="pick-bds" role="radiogroup" aria-label="Backdrop">
                   {BACKDROPS.map((b) => (
                     <button key={b.id} type="button" role="radio" aria-checked={bd === b.id}
@@ -256,6 +269,7 @@ export default function Book() {
             {step === 2 && (
               <>
                 <h2>{tr('Pilih tarikh & masa', 'Choose a date & time')}</h2>
+                {guide}
                 <Calendar value={date} min={startDate} max={lastDate} today={today} lang={lang} tr={tr}
                   onPick={(d) => { setDate(d); setTime(''); }} />
                 <p className="days__hint">
@@ -266,6 +280,13 @@ export default function Book() {
 
                 {busy.loading && <div className="slots slots--loading" aria-label={tr('Memuatkan slot', 'Loading slots')}>{Array.from({ length: 8 }).map((_, i) => <i key={i} />)}</div>}
                 {busy.error && <p className="field-err">{friendlyError(busy.error, lang)} <button type="button" className="linkish" onClick={() => loadBusy(date)}>{tr('Cuba lagi', 'Try again')}</button></p>}
+                {!busy.loading && !busy.error && anyFree && (
+                  <p className="slot-legend" aria-hidden="true">
+                    <span><i />{tr('Kosong', 'Open')}</span>
+                    <span><i className="is-full" />{tr('Dah penuh', 'Taken')}</span>
+                    <span><i className="is-pick" />{tr('Pilihan kamu', 'Your pick')}</span>
+                  </p>
+                )}
                 {!busy.loading && !busy.error && (
                   anyFree ? groups.map(([g, list]) => (
                     <div key={g} className="slotgroup">
@@ -290,6 +311,7 @@ export default function Book() {
             {step === 3 && (
               <>
                 <h2>{tr('Butiran kamu', 'Your details')}</h2>
+                {guide}
                 <div className="fields">
                   <label className="field">
                     <span>{tr('Nama', 'Name')}</span>
@@ -316,6 +338,7 @@ export default function Book() {
             {step === 4 && (
               <>
                 <h2>{tr('Cara bayar', 'How to pay')}</h2>
+                {guide}
                 <div className="pays" role="radiogroup" aria-label={tr('Cara bayar', 'How to pay')}>
                   <button type="button" role="radio" aria-checked={pay === 'qr'} className={`pay ${pay === 'qr' ? 'is-on' : ''}`} onClick={() => setPay('qr')}>
                     <b>{tr('Scan QR DuitNow', 'Scan DuitNow QR')}</b>
@@ -337,6 +360,9 @@ export default function Book() {
             )}
 
             {err && <p className="book__err" role="alert">{friendlyError(err, lang)}</p>}
+            <a className="book__help" href={waLink(tr('Salam RK Studio, saya perlukan bantuan untuk tempah slot.', 'Hi RK Studio, I need some help booking a slot.'))} target="_blank" rel="noreferrer">
+              <WaIcon />{tr('Perlukan bantuan? WhatsApp kami', 'Need help? WhatsApp us')}
+            </a>
           </section>
 
           <aside className={`summary ${sumOpen ? 'is-open' : ''}`} aria-label={tr('Ringkasan tempahan', 'Booking summary')}>

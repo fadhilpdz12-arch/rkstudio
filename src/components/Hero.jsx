@@ -73,7 +73,13 @@ export default function Hero({ onModelReady }) {
           </div>
         </div>
 
-        <div className="hero__cue" aria-hidden="true"><span>{tr('Scroll untuk snap', 'Scroll to snap')}</span><i /></div>
+        <button type="button" className="hero__more"
+          onClick={() => window.scrollBy({ top: window.innerHeight * 0.9, behavior: 'smooth' })}>
+          <span>{tr('Leret ke bawah untuk tengok lagi', 'Scroll down to see more')}</span>
+          <i aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+          </i>
+        </button>
         <div className="hero__flash" aria-hidden="true" />
       </div>
     </section>
