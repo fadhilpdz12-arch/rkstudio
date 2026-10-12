@@ -108,6 +108,8 @@ export default function Camera3D({ progress, onReady, onFail }) {
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const clock = new THREE.Clock();
+    // telefon lemah: kalau frame lambat, turunkan resolusi sekali
+    let frames = 0, slow = 0, lastT = performance.now(), lowered = false;
 
     function loop() {
       if (!visible || disposed) { raf = 0; return; }
@@ -125,19 +127,28 @@ export default function Camera3D({ progress, onReady, onFail }) {
       rig.rotation.z = lerp(-0.06, 0, turn);
 
       const idle = reduce ? 0 : 1 - turn;
-      float.position.x = small ? lerp(0.32, 0, turn) : lerp(0.95, 0, turn);
+      float.position.x = small ? lerp(0.22, 0, turn) : lerp(0.95, 0, turn);
       float.position.y = (small ? lerp(-0.32, 0, turn) : lerp(-0.42, 0, turn)) + Math.sin(t * 0.9) * 0.05 * idle;
       float.rotation.y = pointer.x * 0.18 * (1 - turn * 0.7);
       float.rotation.x = pointer.y * 0.1 * (1 - turn * 0.7);
 
       // dolly masuk ke lensa
       const zoom = ease(clamp((p - 0.25) / 0.6));
-      const baseZ = small ? 9.2 : 6.2;
+      const baseZ = small ? 10.8 : 6.2;
       cam.position.set(0, lerp(0.15, 0, turn), lerp(baseZ, small ? 3.6 : 2.9, zoom));
       cam.lookAt(0, 0, 0);
       key.intensity = 2.6 + zoom * 0.8;
 
       renderer.render(scene, cam);
+      if (!lowered) {
+        const now = performance.now();
+        if (now - lastT > 45) slow += 1;
+        lastT = now; frames += 1;
+        if (frames === 90) {
+          if (slow > 45) { renderer.setPixelRatio(1); resize(); }
+          lowered = true;
+        }
+      }
     }
     loop();
 
