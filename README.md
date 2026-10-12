@@ -42,3 +42,9 @@ QR DuitNow ada di `src/assets/pay/qr.png`. Ganti fail tu kalau tukar akaun.
 ## Keselamatan & sandaran
 
 Lihat **[SECURITY.md](SECURITY.md)**. Struktur database disandarkan dalam **`supabase/schema.sql`** (tanpa data customer dan tanpa kata laluan).
+
+## Keep-alive Supabase (automatik)
+`api/keepalive.js` + `crons` dalam `vercel.json` buat Vercel ping database sekali sehari (9 pagi waktu Malaysia),
+supaya projek Supabase plan percuma tak di-pause. Ia hanya membaca, tiada data diubah.
+Pilihan: set env `CRON_SECRET` (apa-apa teks rawak panjang) di Vercel supaya hanya Vercel Cron boleh panggil endpoint tu.
+Semak di Vercel → Project → Settings → Cron Jobs.
