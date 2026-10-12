@@ -1,69 +1,48 @@
-<<<<<<< HEAD
-# Camera Self-Studio Website
+# RK Studio — website
 
-## Overview
-This project is a modern, minimalist website for a camera self-studio business. It provides users with an aesthetic platform to explore services, view galleries, and book appointments.
+Website rasmi **RK Studio**, self photo studio di Limbongan, Besut.
+Pengunjung boleh tengok pakej, cuba remote, pilih backdrop, dan **tempah slot terus** (bayar QR DuitNow atau tunai).
 
-## Features
-- **Home Page**: Introduces the studio and its offerings.
-- **About Page**: Provides information about the studio's mission and team.
-- **Services Page**: Details the various services offered by the studio.
-- **Gallery**: Showcases images from the studio, highlighting the quality of work.
-- **Pricing**: Outlines the pricing structure for the services provided.
-- **Booking**: Allows users to schedule appointments or book sessions.
+## Halaman
 
-## Project Structure
-```
-studio-website
-├── src
-│   ├── components
-│   │   ├── Header.js
-│   │   ├── Footer.js
-│   │   ├── Gallery.js
-│   │   ├── Pricing.js
-│   │   └── Booking.js
-│   ├── pages
-│   │   ├── Home.js
-│   │   ├── About.js
-│   │   ├── Services.js
-│   │   └── Contact.js
-│   ├── styles
-│   │   ├── App.css
-│   │   ├── Header.css
-│   │   └── Gallery.css
-│   ├── App.js
-│   └── index.js
-├── public
-│   └── index.html
-├── package.json
-└── README.md
+| Laluan | Fungsi |
+|---|---|
+| `/` | Laman utama (kamera 3D, galeri, cara guna, pakej, backdrop, lokasi) |
+| `/tempah` | Tempah slot: pakej → backdrop → tarikh & masa → butiran → bayaran |
+| `/siap/KOD` | Pengesahan tempahan + butang hantar ke WhatsApp |
+| `/admin` | Senarai tempahan, sahkan bayaran, batal, tutup slot (perlu kata laluan) |
+
+## Jalankan di komputer
+
+```bash
+npm install
+npm run dev      # buka http://localhost:5173
+npm run build    # hasil dalam folder dist/
 ```
 
-## Setup Instructions
-1. Clone the repository:
-   ```
-   git clone <repository-url>
-   ```
-2. Navigate to the project directory:
-   ```
-   cd studio-website
-   ```
-3. Install dependencies:
-   ```
-   npm install
-   ```
-4. Start the development server:
-   ```
-   npm start
-   ```
+## Online (Netlify, percuma)
 
-## Usage
-- Visit the home page to learn about the studio.
-- Navigate through the services and gallery to explore offerings.
-- Use the booking feature to schedule your session.
+1. Masuk netlify.com → **Add new site → Import an existing project → GitHub** → pilih repo `rkstudio`.
+2. Build command: `npm run build`. Publish directory: `dist`.
+3. Deploy. Setiap kali push ke GitHub, website auto kemas kini.
 
-## License
-This project is licensed under the MIT License.
-=======
-# rkstudio
->>>>>>> 35ad44ed27a1928b0bc4bd323ffc1e74dc770113
+Vercel pun boleh, `vercel.json` dah disediakan.
+
+## Nak ubah maklumat?
+
+Semua dalam **`src/data.js`**: harga pakej, waktu operasi, nombor WhatsApp, link TikTok, link Google Maps.
+
+> Kalau ubah harga atau waktu operasi, fungsi `create_booking` di Supabase pun kena dikemas kini sama.
+> Database yang kira harga sebenar dan semak waktu, supaya tak boleh diubah dari browser.
+
+## QR DuitNow
+
+Letak gambar QR di `src/assets/pay/qr.png` (atau .jpg/.webp), kemudian push.
+Halaman pengesahan akan tunjuk QR tu secara automatik. Selagi tiada fail QR, customer diminta dapatkan QR melalui WhatsApp.
+
+## Database (Supabase)
+
+- Jadual `rk_bookings` simpan semua tempahan. Dilindungi RLS; browser cuma boleh guna fungsi
+  `get_busy` (slot terisi, tanpa nama/telefon), `create_booking`, dan fungsi `admin_*` (perlu kata laluan).
+- Satu slot tak boleh ditempah dua kali (dikunci di peringkat database).
+- Kata laluan admin boleh ditukar melalui fungsi `admin_change_pin`.
