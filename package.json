@@ -1,0 +1,49 @@
+{
+  "name": "studio-website",
+  "version": "1.0.0",
+  "description": "A modern, minimalist website for a camera self-studio business.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "cross-env NODE_OPTIONS=--openssl-legacy-provider react-scripts start",
+    "build": "cross-env NODE_OPTIONS=--openssl-legacy-provider react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "keywords": [
+    "react",
+    "studio",
+    "photography",
+    "minimalist"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router-dom": "^6.30.3",
+    "react-scripts": "4.0.3"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  },
+  "homepage": "https://yourusername.github.io/studio-website/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/studio-website.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/studio-website/issues"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
